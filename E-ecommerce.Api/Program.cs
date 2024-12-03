@@ -16,6 +16,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
+using Serilog;
 
 namespace E_ecommerce.Api
 {
@@ -24,13 +25,24 @@ namespace E_ecommerce.Api
 		public static void Main(string[] args)
 		{
 			var builder = WebApplication.CreateBuilder(args);
+			#region register serilog
+			Log.Logger = new LoggerConfiguration()
+				.WriteTo.Console()
+				.CreateLogger();
+			builder.Host.UseSerilog((context, logconfig) =>
+			{
+				logconfig.WriteTo.Console();
+				logconfig.ReadFrom.Configuration(context.Configuration);
 
-			builder.Services.AddControllers();
+			}
+			);
+            #endregion
+            builder.Services.AddControllers();
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen();
 			builder.Services.AddSwaggerGen(c =>
 			{
-				c.SwaggerDoc("v1", new OpenApiInfo { Title = "School Project", Version = "v1" });
+				c.SwaggerDoc("v1", new OpenApiInfo { Title = "E-ecommerce Project", Version = "v1" });
 				//c.EnableAnnotations();
 
 				c.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
@@ -143,7 +155,17 @@ namespace E_ecommerce.Api
 			app.UseAuthorization();
 			app.MapControllers();
 			SeedRolesAndAdmin.InitializeAsync(app.Services).Wait();
+			try
+			{
+				Log.Information("App Run");
+				Log.Information("{@ID}{@VAlue}","ID", Guid.NewGuid());
 			app.Run();
+
+			}
+			catch (Exception ex)
+			{
+				Log.Fatal("App Terminated Unexpectedly");
+			}
 		}
 	}
 }
